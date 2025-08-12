@@ -28,7 +28,7 @@
 #
 # =================================================================
 
-import requests
+import httpx
 import logging
 import os
 import json
@@ -229,7 +229,10 @@ def _get_json_data(jsonpath):
     """
 
     if jsonpath[0:4].upper() == 'HTTP':
-        jsondata = requests.get(jsonpath).json()
+        with httpx.Client() as client:
+            response = client.get(jsonpath)
+            response.raise_for_status()
+            jsondata = response.json()
     else:
         with open(jsonpath) as fh:
             jsondata = json.load(fh)

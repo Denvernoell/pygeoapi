@@ -32,6 +32,7 @@ import json
 import logging
 
 from dateutil.parser import isoparse
+import polars as pl
 import geopandas as gpd
 import pyarrow
 import pyarrow.compute as pc
@@ -50,7 +51,8 @@ from pygeoapi.util import crs_transform
 LOGGER = logging.getLogger(__name__)
 
 
-def arrow_to_pandas_type(arrow_type):
+def arrow_to_polars_type(arrow_type):
+    """Convert PyArrow type to Polars equivalent type"""
     pd_type = arrow_type.to_pandas_dtype()
     try:
         # Needed for specific types such as dtype('<M8[ns]')
@@ -260,7 +262,7 @@ class ParquetProvider(BaseProvider):
                 LOGGER.debug('processing properties')
                 for name, value in properties:
                     field = self.ds.schema.field(name)
-                    pd_type = arrow_to_pandas_type(field.type)
+                    pd_type = arrow_to_polars_type(field.type)
                     expr = pc.field(name) == pc.scalar(pd_type(value))
 
                     filter = filter & expr
@@ -312,7 +314,7 @@ class ParquetProvider(BaseProvider):
         result = None
         try:
             LOGGER.debug(f'Fetching identifier {identifier}')
-            id_type = arrow_to_pandas_type(
+            id_type = arrow_to_polars_type(
                 self.ds.schema.field(self.id_field).type)
             batches = self._read_parquet(
                 filter=(
@@ -325,7 +327,10 @@ class ParquetProvider(BaseProvider):
                     assert (
                         batch.num_rows == 1
                     ), f'Multiple items found with ID {identifier}'
-                    row = batch.to_pandas()
+                    # Convert to Polars DataFrame for better performance
+                    row_df = pl.from_arrow(batch.to_table())
+                    # Convert back to pandas for geopandas compatibility
+                    row = row_df.to_pandas()
                     break
             else:
                 raise ProviderItemNotFoundError(f'ID {identifier} not found')
@@ -410,7 +415,10 @@ class ParquetProvider(BaseProvider):
                 batches_list, schema=scanner.projected_schema
             )
 
-            rp = table.to_pandas()
+            # Use Polars for efficient data processing
+            rp_polars = pl.from_arrow(table)
+            # Convert to pandas only for geopandas compatibility
+            rp = rp_polars.to_pandas()
 
             number_matched = offset + len(rp)
 

@@ -67,7 +67,6 @@ ARG ADD_DEB_PACKAGES="\
     python3-gdal \
     python3-jsonpatch \
     python3-netcdf4 \
-    python3-pandas \
     python3-psycopg2 \
     python3-pydantic \
     python3-pymongo \

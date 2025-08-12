@@ -47,7 +47,7 @@
 from datetime import datetime, timedelta, timezone
 import logging
 
-import requests
+import httpx
 
 from pygeoapi.provider.base import (
     BaseProvider, ProviderNotFoundError, ProviderQueryError)
@@ -133,7 +133,9 @@ class TabledapProvider(BaseProvider):
         url = f'{url}?{"&".join(query_params)}'
 
         LOGGER.debug(f'Fetching data from {url}')
-        response = requests.get(url)
+        with httpx.Client() as client:
+            response = client.get(url)
+            response.raise_for_status()
         LOGGER.debug(f'Response: {response}')
         data = response.json()
         LOGGER.debug(f'Data: {data}')
@@ -188,7 +190,9 @@ class TabledapProvider(BaseProvider):
         url = f'{url}?{"&".join(query_params)}'
         LOGGER.debug(f'Fetching data from {url}')
 
-        response = requests.get(url)
+        with httpx.Client() as client:
+            response = client.get(url)
+            response.raise_for_status()
         LOGGER.debug(f'Response: {response}')
         data = response.json()
         LOGGER.debug(f'Data: {data}')

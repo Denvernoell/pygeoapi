@@ -59,8 +59,7 @@ import pyproj
 import pygeofilter.ast
 import pygeofilter.values
 from pyproj.exceptions import CRSError
-from requests import Session
-from requests.structures import CaseInsensitiveDict
+import httpx
 from shapely import ops
 from shapely.geometry import (
     box,
@@ -898,10 +897,10 @@ class UrlPrefetcher:
     """
 
     def __init__(self):
-        self._session = Session()
-        self._session.max_redirects = 1
+        # httpx.Client supports connection reuse like requests.Session
+        self._client = httpx.Client(follow_redirects=True, max_redirects=1)
 
-    def get_headers(self, url: str, **kwargs) -> CaseInsensitiveDict:
+    def get_headers(self, url: str, **kwargs) -> dict:
         """ Issues an HTTP HEAD request to the given URL.
         Returns a case-insensitive dictionary of all headers.
         If the request times out (defaults to 1 second unless `timeout`
@@ -909,13 +908,17 @@ class UrlPrefetcher:
         an empty dictionary is returned.
         """
         kwargs.setdefault('timeout', 1)
-        kwargs.setdefault('allow_redirects', True)
         try:
-            response = self._session.head(url, **kwargs)
+            response = self._client.head(url, **kwargs)
             response.raise_for_status()
         except Exception:  # noqa
-            return CaseInsensitiveDict()
-        return response.headers
+            return {}
+        return dict(response.headers)
+
+    def __del__(self):
+        """Clean up the client when the object is destroyed"""
+        if hasattr(self, '_client'):
+            self._client.close()
 
 
 def bbox2geojsongeometry(bbox: list) -> dict:

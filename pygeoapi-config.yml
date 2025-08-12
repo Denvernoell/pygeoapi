@@ -107,7 +107,7 @@ resources:
     obs:
         type: collection
         title: Observations
-        description: My cool observations
+        description: My cool observations test!
         keywords:
             - observations
             - monitoring

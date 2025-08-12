@@ -1,5 +1,5 @@
-# Flask-based CORS setup
-flask_cors
+# FastHTML-based CORS setup (built-in with Starlette middleware)
+# No additional CORS package needed for FastHTML
 
 # testing
 pytest

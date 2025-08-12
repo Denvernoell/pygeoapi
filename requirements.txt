@@ -1,8 +1,8 @@
 Babel
 click
 filelock
-Flask
-jinja2
+python-fasthtml
+python-dotenv
 jsonschema
 pydantic
 pygeofilter
@@ -12,7 +12,7 @@ python-dateutil
 pytz
 PyYAML
 rasterio
-requests
+httpx
 shapely
 SQLAlchemy
 tinydb
